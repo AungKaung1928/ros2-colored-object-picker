@@ -1,0 +1,33 @@
+# MoveIt Configuration
+planning_scene_monitor:
+  publish_planning_scene: true
+  publish_geometry_updates: true
+  publish_state_updates: true
+  publish_transforms_updates: true
+
+move_group:
+  planning_plugin: ompl_interface/OMPLPlanner
+  planning_time: 5.0
+  planner_id: RRTConnect
+  max_planning_attempts: 10
+
+# Joint limits
+joint_limits:
+  joint1:
+    max_velocity: 2.0
+    max_acceleration: 1.0
+  joint2:
+    max_velocity: 2.0
+    max_acceleration: 1.0
+  joint3:
+    max_velocity: 2.0
+    max_acceleration: 1.0
+  joint4:
+    max_velocity: 2.0
+    max_acceleration: 1.0
+  joint5:
+    max_velocity: 2.0
+    max_acceleration: 1.0
+  joint6:
+    max_velocity: 2.0
+    max_acceleration: 1.0
