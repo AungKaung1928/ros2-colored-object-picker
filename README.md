@@ -79,19 +79,14 @@ pip install opencv-python numpy
 
 ### Build Package
 ```bash
-cd ~/ros2_ws/src
+cd ~/colored_object_ws/src
 git clone <your-repo-url>
-cd ~/ros2_ws
+cd ~/colored_object_ws
 colcon build --packages-select colored_object_picker
 source install/setup.bash
 ```
 
 ## Usage 🎮
-
-### Run the Detection Node
-```bash
-ros2 run colored_object_picker object_picker
-```
 
 ### Launch with Launch File
 ```bash
@@ -142,15 +137,3 @@ self.color_ranges = {
 - **NumPy**: Latest stable
 - **cv_bridge**: ROS2 OpenCV bridge
 - **rclpy**: ROS2 Python client library
-
-## Contributing 🤝
-
-Feel free to submit issues and enhancement requests! This package is designed to be easily extensible for additional colors and detection methods.
-
-## License 📄
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
----
-
-*Made with ❤️ for robotics and computer vision enthusiasts*
