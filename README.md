@@ -1,17 +1,17 @@
-# Colored Object Picker 🎯
+# Colored Object Picker 
 
 A ROS2 package for real-time detection and tracking of colored objects using computer vision. Perfect for robotic pick-and-place applications and color-based object manipulation.
 
-## Features ✨
+## Features 
 
-- 🌈 **6-Color Detection**: Yellow, Pink, Blue, Red, Green, Purple
-- 📷 **Real-time Processing**: Live camera feed with OpenCV
-- 🎯 **Precise Tracking**: Advanced HSV color space filtering with validation
-- 🔍 **Smart Filtering**: Morphological operations to reduce noise
-- 📍 **3D Pose Publishing**: Converts pixel coordinates to world coordinates
-- 🎨 **Visual Feedback**: Live display with color labels and detection markers
+-  **6-Color Detection**: Yellow, Pink, Blue, Red, Green, Purple
+-  **Real-time Processing**: Live camera feed with OpenCV
+-  **Precise Tracking**: Advanced HSV color space filtering with validation
+-  **Smart Filtering**: Morphological operations to reduce noise
+-  **3D Pose Publishing**: Converts pixel coordinates to world coordinates
+-  **Visual Feedback**: Live display with color labels and detection markers
 
-## Package Structure 📁
+## Package Structure 
 
 ```
 colored_object_picker/
@@ -26,16 +26,16 @@ colored_object_picker/
 └── README.md
 ```
 
-## How It Works 🔧
+## How It Works 
 
 ### Color Detection Pipeline
-1. **Camera Capture** 📹: Captures frames from USB camera (640x480)
-2. **HSV Conversion** 🎨: Converts BGR to HSV color space for better color detection
-3. **Color Filtering** 🔍: Uses predefined HSV ranges for each target color
-4. **Noise Reduction** 🧹: Applies morphological operations and median blur
-5. **Contour Detection** 📐: Finds object boundaries and calculates centroids
-6. **Validation** ✅: Multi-level validation (center pixel + region analysis)
-7. **Pose Publishing** 📡: Converts pixel coordinates to 3D world coordinates
+1. **Camera Capture** : Captures frames from USB camera (640x480)
+2. **HSV Conversion** : Converts BGR to HSV color space for better color detection
+3. **Color Filtering** : Uses predefined HSV ranges for each target color
+4. **Noise Reduction** : Applies morphological operations and median blur
+5. **Contour Detection** : Finds object boundaries and calculates centroids
+6. **Validation** : Multi-level validation (center pixel + region analysis)
+7. **Pose Publishing** : Converts pixel coordinates to 3D world coordinates
 
 ### Advanced Features
 - **Multi-Range Detection**: Handles colors like red that span HSV boundaries
@@ -43,7 +43,7 @@ colored_object_picker/
 - **Region Validation**: Checks surrounding pixels for color consistency
 - **Enhanced Precision**: Extra validation for similar colors (pink/purple/blue)
 
-## ROS2 Topics 📡
+## ROS2 Topics 
 
 ### Publishers
 - `/camera/image_raw` (sensor_msgs/Image): Raw camera feed
@@ -53,7 +53,7 @@ colored_object_picker/
 - **Node Name**: `precise_color_object_picker`
 - **Update Rate**: 10 Hz (100ms timer)
 
-## Color Ranges 🎨
+## Color Ranges 
 
 | Color | HSV Range | Min Area | Display Color |
 |-------|-----------|----------|---------------|
@@ -64,7 +64,7 @@ colored_object_picker/
 | 🟢 Green | [50,150,100] - [70,255,255] | 1200px | Green |
 | 🟣 Purple | [125,120,120] - [140,255,255] | 1000px | Purple |
 
-## Installation 🚀
+## Installation 
 
 ### Prerequisites
 ```bash
@@ -86,7 +86,7 @@ colcon build --packages-select colored_object_picker
 source install/setup.bash
 ```
 
-## Usage 🎮
+## Usage 
 
 ### Launch with Launch File
 ```bash
@@ -102,7 +102,7 @@ ros2 topic echo /detected_object_pose
 ros2 topic echo /camera/image_raw
 ```
 
-## Configuration ⚙️
+## Configuration 
 
 ### Adjust Color Ranges
 Edit the `color_ranges` dictionary in `object_picker.py`:
@@ -117,7 +117,7 @@ self.color_ranges = {
 - **Minimum Areas**: Adjust `min_areas` dictionary values
 - **Update Rate**: Modify timer period in `create_timer()`
 
-## Troubleshooting 🛠️
+## Troubleshooting 
 
 ### Common Issues
 - **Camera Not Opening**: Check camera permissions and USB connection
@@ -130,7 +130,7 @@ self.color_ranges = {
 - Console logs provide detection status and error messages
 - Live visualization window shows detection results
 
-## Dependencies 📦
+## Dependencies 
 
 - **ROS2**: Humble or later
 - **OpenCV**: 4.x
