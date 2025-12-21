@@ -1,0 +1,69 @@
+# Color Detection Configuration
+# HSV ranges: H (0-180), S (0-255), V (0-255)
+# Display colors: BGR format
+
+colors:
+  yellow:
+    hsv_ranges:
+      - lower: [18, 120, 180]
+        upper: [32, 255, 255]
+      - lower: [15, 100, 200]
+        upper: [35, 255, 255]
+    min_area: 800
+    display_color: [0, 255, 255]  # Yellow in BGR
+    message: "🌟⚡ YELLOW SUNSHINE DETECTED! ⚡🌟"
+
+  pink:
+    hsv_ranges:
+      - lower: [140, 50, 180]
+        upper: [170, 150, 255]
+    min_area: 800
+    display_color: [203, 192, 255]  # Pink in BGR
+    message: "🌸💖 PINK BLOSSOM SPOTTED! 💖🌸"
+
+  blue:
+    hsv_ranges:
+      - lower: [100, 150, 150]
+        upper: [120, 255, 255]
+    min_area: 1200
+    display_color: [255, 0, 0]  # Blue in BGR
+    message: "🌊💙 OCEAN BLUE FOUND! 💙🌊"
+
+  red:
+    hsv_ranges:
+      # Red wraps around HSV hue (0 and 180)
+      - lower: [0, 150, 150]
+        upper: [10, 255, 255]
+      - lower: [170, 150, 150]
+        upper: [180, 255, 255]
+    min_area: 1200
+    display_color: [0, 0, 255]  # Red in BGR
+    message: "🔥❤️ FIERY RED DETECTED! ❤️🔥"
+
+  green:
+    hsv_ranges:
+      - lower: [50, 150, 100]
+        upper: [70, 255, 255]
+    min_area: 1200
+    display_color: [0, 255, 0]  # Green in BGR
+    message: "🌿💚 FOREST GREEN LOCKED! 💚🌿"
+
+  purple:
+    hsv_ranges:
+      - lower: [125, 120, 120]
+        upper: [140, 255, 255]
+    min_area: 1000
+    display_color: [128, 0, 128]  # Purple in BGR
+    message: "🔮💜 MYSTIC PURPLE DISCOVERED! 💜🔮"
+
+# Camera settings (used by node)
+camera:
+  id: 0
+  frame_width: 640
+  frame_height: 480
+  update_rate: 10.0
+
+# Visualization settings
+visualization:
+  show_window: true
+  show_masks: false

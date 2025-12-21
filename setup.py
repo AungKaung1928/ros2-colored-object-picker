@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 import os
 from glob import glob
 
@@ -6,26 +6,32 @@ package_name = 'colored_object_picker'
 
 setup(
     name=package_name,
-    version='0.0.0',
-    packages=[package_name],
+    version='1.0.0',
+    packages=find_packages(exclude=['test']),
     data_files=[
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        (os.path.join('share', package_name, 'launch'), glob('launch/*.launch.py')),
-        (os.path.join('share', package_name, 'config'), glob('config/*.yaml')),
-        (os.path.join('share', package_name, 'urdf'), glob('urdf/*.urdf.xacro')),
+        (os.path.join('share', package_name, 'launch'), 
+            glob('launch/*.launch.py')),
+        (os.path.join('share', package_name, 'config'), 
+            glob('config/*.yaml')),
     ],
-    install_requires=['setuptools'],
+    install_requires=[
+        'setuptools',
+        'numpy',
+        'opencv-python',
+        'pyyaml',
+    ],
     zip_safe=True,
     maintainer='allkg',
     maintainer_email='aungkaungmyattt1928@gmail.com',
-    description='Simple colored object picker',
+    description='ROS2 package for real-time colored object detection and tracking',
     license='Apache-2.0',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'object_picker = colored_object_picker.object_picker:main',
+            'detector_node = colored_object_picker.detector_node:main',
         ],
     },
 )
