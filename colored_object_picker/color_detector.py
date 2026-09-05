@@ -84,8 +84,11 @@ class ColorDetector:
         z_offset: float = 0.1
     ) -> WorldPose:
         """
-        Convert pixel coordinates to world coordinates.
-        
+        Image-plane offset of a pixel from the optical centre, in metres at an ASSUMED
+        scale (default 1 mm per pixel) and a FIXED z. This is not a metric 3D position:
+        that needs the camera intrinsics and a depth source (stereo, RGB-D or a known
+        object size). Good enough to drive a planar pick target in the camera frame.
+
         Args:
             pixel_coords: (x, y) pixel coordinates
             image_width: Camera image width

@@ -10,8 +10,9 @@ import yaml
 
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, QoSReliabilityPolicy
 from sensor_msgs.msg import Image
-from geometry_msgs.msg import Pose, Point, Quaternion
+from geometry_msgs.msg import PoseStamped, Point, Quaternion
 from cv_bridge import CvBridge
 from ament_index_python.packages import get_package_share_directory
 
@@ -37,6 +38,10 @@ class ColorDetectorNode(Node):
         self.declare_parameter('show_visualization', True)
         self.declare_parameter('show_masks', False)
         self.declare_parameter('config_file', '')
+        # Non-empty: subscribe to this image topic instead of opening a camera device.
+        # Lets the node run on a sim camera or a bag, and be tested without hardware.
+        self.declare_parameter('image_topic', '')
+        self.declare_parameter('camera_frame', 'camera_link')
         
         # Get parameters
         camera_id = self.get_parameter('camera_id').value
@@ -46,6 +51,8 @@ class ColorDetectorNode(Node):
         self.show_visualization = self.get_parameter('show_visualization').value
         self.show_masks = self.get_parameter('show_masks').value
         config_file = self.get_parameter('config_file').value
+        image_topic = self.get_parameter('image_topic').value
+        self.camera_frame = self.get_parameter('camera_frame').value
         
         # Load color configuration
         color_configs = self._load_config(config_file)
@@ -57,34 +64,31 @@ class ColorDetectorNode(Node):
         self.detector = ColorDetector(color_configs)
         self.color_configs = color_configs
         
-        # Initialize camera
         self.bridge = CvBridge()
-        self.cap = cv2.VideoCapture(camera_id)
-        
-        if not self.cap.isOpened():
-            self.get_logger().error(f'Cannot open camera {camera_id}')
-            return
-        
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.frame_width)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.frame_height)
-        
-        # Publishers
-        self.image_pub = self.create_publisher(Image, '/camera/image_raw', 10)
-        self.pose_pub = self.create_publisher(Pose, '/detected_object_pose', 10)
-        
-        # Timer for processing loop
-        timer_period = 1.0 / update_rate
-        self.timer = self.create_timer(timer_period, self.process_frame)
-        
+        self.cap = None
+        self.image_sub = None
         self.frame_count = 0
-        
+        self.pose_pub = self.create_publisher(PoseStamped, '/detected_object_pose', 10)
+
+        if image_topic:
+            sensor_qos = QoSProfile(depth=1, reliability=QoSReliabilityPolicy.BEST_EFFORT)
+            self.image_sub = self.create_subscription(
+                Image, image_topic, self._on_image, sensor_qos)
+            self.image_pub = None
+            source = f'topic {image_topic}'
+        else:
+            self.cap = cv2.VideoCapture(camera_id)
+            if not self.cap.isOpened():
+                self.get_logger().error(f'Cannot open camera {camera_id}')
+                return
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.frame_width)
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.frame_height)
+            self.image_pub = self.create_publisher(Image, '/camera/image_raw', 10)
+            self.timer = self.create_timer(1.0 / update_rate, self.process_frame)
+            source = f'camera {camera_id} ({self.frame_width}x{self.frame_height}) at {update_rate} Hz'
+
         color_names = ', '.join(color_configs.keys())
-        self.get_logger().info(
-            f'Color Detector Node Started\n'
-            f'  Camera: {camera_id} ({self.frame_width}x{self.frame_height})\n'
-            f'  Update rate: {update_rate} Hz\n'
-            f'  Detecting: {color_names}'
-        )
+        self.get_logger().info(f'Color detector started: {source}; detecting {color_names}')
     
     def _load_config(self, config_file: str) -> Optional[Dict[str, ColorConfig]]:
         """
@@ -179,30 +183,41 @@ class ColorDetectorNode(Node):
             )
         }
     
+    def _on_image(self, msg: Image) -> None:
+        """Image-topic source."""
+        try:
+            frame = self.bridge.imgmsg_to_cv2(msg, 'bgr8')
+        except Exception as e:  # cv_bridge encoding mismatch
+            self.get_logger().error(f'Cannot convert image: {e}', throttle_duration_sec=5.0)
+            return
+        self.frame_height, self.frame_width = frame.shape[:2]
+        self._process(frame, msg.header.stamp)
+
     def process_frame(self) -> None:
-        """Capture and process a single frame."""
+        """Camera-device source: capture one frame, republish it, process it."""
         ret, frame = self.cap.read()
         if not ret:
             self.get_logger().warn('Failed to capture frame')
             return
-        
+        stamp = self.get_clock().now().to_msg()
+        img_msg = self.bridge.cv2_to_imgmsg(frame, 'bgr8')
+        img_msg.header.stamp = stamp
+        img_msg.header.frame_id = self.camera_frame
+        self.image_pub.publish(img_msg)
+        self._process(frame, stamp)
+
+    def _process(self, frame, stamp) -> None:
+        """Detect, publish poses, draw."""
         try:
-            # Apply Gaussian blur
             frame = cv2.GaussianBlur(frame, (5, 5), 0)
-            
-            # Publish raw image
-            img_msg = self.bridge.cv2_to_imgmsg(frame, 'bgr8')
-            img_msg.header.stamp = self.get_clock().now().to_msg()
-            img_msg.header.frame_id = 'camera_link'
-            self.image_pub.publish(img_msg)
-            
+
             # Detect objects
             detected_objects, masks = self.detector.detect_objects(
                 frame, return_masks=self.show_masks
             )
             
             if detected_objects:
-                self._handle_detections(frame, detected_objects)
+                self._handle_detections(detected_objects, stamp)
                 
                 if self.show_masks and masks:
                     for color_name, mask in masks.items():
@@ -221,38 +236,17 @@ class ColorDetectorNode(Node):
         except Exception as e:
             self.get_logger().error(f'Error processing frame: {e}')
     
-    def _handle_detections(
-        self,
-        frame,
-        detected_objects: list[DetectedObject]
-    ) -> None:
-        """
-        Handle detected objects - publish poses and log messages.
-        
-        Args:
-            frame: Original camera frame
-            detected_objects: List of detected objects
-        """
+    def _handle_detections(self, detected_objects: list[DetectedObject], stamp) -> None:
+        """Publish one PoseStamped per detection (image-plane offset, see pixel_to_world)."""
         for obj in detected_objects:
-            # Convert to world pose and publish
             world_pose = self.detector.pixel_to_world(
-                obj.centroid,
-                self.frame_width,
-                self.frame_height
-            )
-            
-            pose_msg = Pose()
-            pose_msg.position = Point(
-                x=world_pose.x,
-                y=world_pose.y,
-                z=world_pose.z
-            )
-            pose_msg.orientation = Quaternion(
-                w=world_pose.qw,
-                x=world_pose.qx,
-                y=world_pose.qy,
-                z=world_pose.qz
-            )
+                obj.centroid, self.frame_width, self.frame_height)
+            pose_msg = PoseStamped()
+            pose_msg.header.stamp = stamp
+            pose_msg.header.frame_id = self.camera_frame
+            pose_msg.pose.position = Point(x=world_pose.x, y=world_pose.y, z=world_pose.z)
+            pose_msg.pose.orientation = Quaternion(
+                w=world_pose.qw, x=world_pose.qx, y=world_pose.qy, z=world_pose.qz)
             self.pose_pub.publish(pose_msg)
             
             # Log detection message
@@ -262,7 +256,7 @@ class ColorDetectorNode(Node):
     
     def destroy_node(self) -> None:
         """Clean up resources."""
-        if hasattr(self, 'cap') and self.cap is not None:
+        if self.cap is not None:
             self.cap.release()
         cv2.destroyAllWindows()
         super().destroy_node()
@@ -279,7 +273,7 @@ def main(args=None) -> None:
         pass
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        rclpy.try_shutdown()
 
 
 if __name__ == '__main__':

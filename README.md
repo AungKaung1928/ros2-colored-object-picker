@@ -8,7 +8,7 @@ A ROS2 package for real-time detection and tracking of colored objects using com
 - **Real-time Processing**: Live camera feed with OpenCV
 - **Precise Tracking**: Advanced HSV color space filtering with validation
 - **Smart Filtering**: Morphological operations to reduce noise
-- **3D Pose Publishing**: Converts pixel coordinates to world coordinates
+- **Pose Publishing**: `PoseStamped` in the camera frame; image-plane offset at an assumed scale (see note below)
 - **Visual Feedback**: Live display with color labels and detection markers
 - **Configurable**: YAML-based color configuration
 - **Testable**: Unit tests for core detection logic
@@ -53,11 +53,23 @@ colored_object_picker/
 ## ROS2 Topics
 
 ### Publishers
-- `/camera/image_raw` (sensor_msgs/Image): Raw camera feed
-- `/detected_object_pose` (geometry_msgs/Pose): 3D pose of detected objects
+- `/camera/image_raw` (sensor_msgs/Image): raw camera feed (camera-device source only)
+- `/detected_object_pose` (geometry_msgs/PoseStamped): one message per detection, `frame_id` = `camera_frame`
+
+### Subscribers
+- `<image_topic>` (sensor_msgs/Image, best-effort): used instead of the camera device when the
+  `image_topic` parameter is non-empty. Lets the node run on a Gazebo camera, a bag, or a test
+  publisher.
+
+### About the pose
+`pixel_to_world()` returns the pixel offset from the image centre scaled by 1 mm/px with a fixed
+z of 0.1 m. That is a planar target in the camera frame, **not** a metric 3D position: a metric
+pose needs the camera intrinsics plus a depth source (RGB-D, stereo, or a known object size).
 
 ### Parameters
 | Parameter | Type | Default | Description |
+| `image_topic` | string | `''` | Non-empty: subscribe to this topic instead of opening `camera_id` |
+| `camera_frame` | string | `camera_link` | `frame_id` stamped on images and poses |
 |-----------|------|---------|-------------|
 | `camera_id` | int | 0 | Camera device ID |
 | `frame_width` | int | 640 | Camera frame width |
@@ -143,17 +155,31 @@ colors:
 
 ## Testing
 
-### Run Unit Tests
+### Unit tests (no camera)
 ```bash
-cd ~/colored_object_ws/src/colored_object_picker
-pytest test/ -v
+python3 -m pytest test/   # 17 tests on masks, centroids, validation, config loading
 ```
 
-### Test Coverage
-- Centroid calculation
-- Pixel-to-world coordinate conversion
-- Color mask creation
-- Configuration loading
+### End-to-end without hardware
+Publish a synthetic image with a yellow and a blue square, run the detector on that topic, and
+watch the poses. Verified 2026-09-05 on Humble: both colours detected every frame, poses at the
+input rate.
+```bash
+# terminal 1: synthetic camera (see scripts in the README history or write a 15-line rclpy
+# publisher that draws two cv2.rectangle() blocks and publishes bgr8 on /synthetic/image_raw)
+# terminal 2
+ros2 run colored_object_picker detector_node --ros-args -p image_topic:=/synthetic/image_raw -p show_visualization:=false
+# terminal 3
+ros2 topic echo /detected_object_pose
+```
+Expected for a blue square centred at pixel (490, 360) in a 640x480 image: `position: {x: 0.17, y: 0.12, z: 0.1}`.
+
+### With a webcam
+```bash
+ros2 launch colored_object_picker detector.launch.py
+```
+Hold a coloured object in front of the camera; the window labels it and `/detected_object_pose`
+publishes. HSV ranges are in `config/colors.yaml`; tune them under your lighting.
 
 ## Troubleshooting
 
