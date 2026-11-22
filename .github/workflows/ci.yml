@@ -27,6 +27,11 @@ jobs:
         run: |
           source install/setup.bash
           ros2 pkg prefix colored_object_picker
+      - name: Launch test (detector on an image topic, no camera)
+        run: |
+          source install/setup.bash
+          cd src/colored_object_picker
+          launch_test test/test_launch_detector.py
   logic-tests:
     runs-on: ubuntu-22.04
     steps:
@@ -35,6 +40,6 @@ jobs:
         with:
           python-version: '3.10'
       - run: pip install numpy opencv-python-headless pyyaml pytest
-      - run: python -m pytest -q test/
+      - run: python -m pytest -q test/ --ignore=test/test_launch_detector.py  # launch test runs in the ROS job
       - name: Demo image still reproduces
         run: PYTHONPATH=. python scripts/make_demo.py | grep -c . | grep -qx 3
