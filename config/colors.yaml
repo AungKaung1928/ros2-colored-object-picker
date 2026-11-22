@@ -56,14 +56,6 @@ colors:
     display_color: [128, 0, 128]  # Purple in BGR
     message: "🔮💜 MYSTIC PURPLE DISCOVERED! 💜🔮"
 
-# Camera settings (used by node)
-camera:
-  id: 0
-  frame_width: 640
-  frame_height: 480
-  update_rate: 10.0
-
-# Visualization settings
-visualization:
-  show_window: true
-  show_masks: false
+# Only the colors block above is read from this file. Camera and display settings are ROS
+# parameters of detector_node: camera_id, frame_width, frame_height, update_rate,
+# show_visualization, show_masks, image_topic (see docs/DETAILS.md).
