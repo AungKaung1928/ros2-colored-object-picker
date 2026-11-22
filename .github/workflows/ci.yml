@@ -27,3 +27,14 @@ jobs:
         run: |
           source install/setup.bash
           ros2 pkg prefix colored_object_picker
+  logic-tests:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - run: pip install numpy opencv-python-headless pyyaml pytest
+      - run: python -m pytest -q test/
+      - name: Demo image still reproduces
+        run: PYTHONPATH=. python scripts/make_demo.py | grep -c . | grep -qx 3
