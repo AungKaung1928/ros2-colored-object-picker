@@ -23,6 +23,8 @@ Unit tests, no ROS or camera needed (from the repo root):
 python3 -m pytest test/   # 17 tests: masks, centroids, validation, config loading
 ```
 
+Node test without a camera: `cd src/colored_object_picker && launch_test test/test_launch_detector.py` (after `source install/setup.bash`) runs the installed node on an image topic: a black frame gives no pose, a yellow square at pixel (480, 120) gives (0.16, -0.12, 0.1) in `camera_link`. CI runs it in `ros:humble` on every push.
+
 ## Limits
 `pixel_to_world()` returns the pixel offset from the image centre scaled by 1 mm/px with a fixed
 z of 0.1 m. That is a planar target in the camera frame, **not** a metric 3D position: a metric
