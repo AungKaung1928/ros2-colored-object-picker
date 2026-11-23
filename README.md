@@ -12,7 +12,7 @@ Requires Ubuntu 22.04, ROS 2 Humble and a webcam (`sudo apt install ros-humble-c
 
 ```bash
 mkdir -p ~/colored_object_ws/src && cd ~/colored_object_ws/src
-git clone <this repo URL>
+git clone https://github.com/AungKaung1928/ros2-colored-object-picker.git
 cd .. && colcon build --packages-select colored_object_picker && source install/setup.bash
 ros2 launch colored_object_picker detector.launch.py   # window labels coloured objects; poses on /detected_object_pose
 ```
